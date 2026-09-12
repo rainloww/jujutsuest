@@ -1,1 +1,709 @@
-<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Gradient Maker</title> <style> * { box-sizing: border-box; } body { margin: 0; min-height: 100vh; font-family: Arial, Helvetica, sans-serif; background: #111; color: white; display: flex; justify-content: center; padding: 30px 15px; } .container { width: 100%; max-width: 900px; } h1 { text-align: center; margin: 0 0 8px; font-size: 32px; } .subtitle { text-align: center; color: #999; margin-bottom: 25px; } .preview { width: 100%; height: 220px; border-radius: 16px; background: linear-gradient(to right, white, black); border: 1px solid #333; margin-bottom: 20px; box-shadow: 0 10px 35px rgba(0,0,0,.35); } .controls { background: #1b1b1b; border: 1px solid #333; border-radius: 16px; padding: 20px; } .stops { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; } .stop { display: flex; align-items: center; gap: 12px; background: #252525; padding: 12px; border-radius: 10px; } .color-picker { width: 55px; height: 42px; padding: 0; border: none; background: none; cursor: pointer; } .rgb-input { flex: 1; min-width: 0; background: #111; border: 1px solid #444; color: white; border-radius: 7px; padding: 10px; font-size: 15px; font-family: monospace; } .position { width: 80px; background: #111; border: 1px solid #444; color: white; border-radius: 7px; padding: 10px; } button { border: none; border-radius: 8px; padding: 11px 16px; background: #333; color: white; cursor: pointer; font-size: 14px; transition: .15s; } button:hover { background: #444; } .primary { background: #fff; color: #111; font-weight: bold; } .primary:hover { background: #ddd; } .danger { background: #5a2222; } .danger:hover { background: #753030; } .button-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; } .output-label { display: block; margin-bottom: 8px; color: #aaa; font-size: 14px; } .output { display: flex; gap: 10px; } #output { flex: 1; min-width: 0; background: #0b0b0b; border: 1px solid #444; border-radius: 8px; color: #fff; padding: 13px; font-family: monospace; font-size: 15px; } .message { height: 20px; margin-top: 8px; color: #7cff9a; font-size: 13px; } @media (max-width: 600px) { .stop { flex-wrap: wrap; } .rgb-input { flex-basis: 100%; } .position { flex: 1; } .output { flex-direction: column; } .preview { height: 160px; } } </style> </head> <body> <div class="container"> <h1>Gradient Maker</h1> <div class="subtitle"> Create, reverse and copy RGB gradients </div> <div class="preview" id="preview"></div> <div class="controls"> <div class="stops" id="stops"></div> <div class="button-row"> <button onclick="addStop()">+ Add Color</button> <button onclick="reverseGradient()">↔ Reverse</button> <button onclick="resetGradient()">Reset</button> </div> <label class="output-label"> Gradient RGB codes </label> <div class="output"> <input id="output" type="text" value="255,255,255 0,0,0" spellcheck="false" > <button class="primary" onclick="copyGradient()"> Copy </button> </div> <div class="message" id="message"></div> </div> </div> <script> let stops = [ { color: "#ffffff", position: 0 }, { color: "#000000", position: 100 } ]; const stopsContainer = document.getElementById("stops"); const preview = document.getElementById("preview"); const output = document.getElementById("output"); const message = document.getElementById("message"); function hexToRgb(hex) { hex = hex.replace("#", ""); if (hex.length === 3) { hex = hex.split("").map(x => x + x).join(""); } const number = parseInt(hex, 16); return { r: (number >> 16) & 255, g: (number >> 8) & 255, b: number & 255 }; } function rgbToHex(r, g, b) { return "#" + [r, g, b] .map(x => Number(x).toString(16).padStart(2, "0")) .join(""); } function renderStops() { stopsContainer.innerHTML = ""; stops.forEach((stop, index) => { const rgb = hexToRgb(stop.color); const div = document.createElement("div"); div.className = "stop"; div.innerHTML = ` <input class="color-picker" type="color" value="${stop.color}" title="Choose color" > <input class="rgb-input" type="text" value="${rgb.r},${rgb.g},${rgb.b}" spellcheck="false" placeholder="255,255,255" > <input class="position" type="number" min="0" max="100" value="${stop.position}" title="Position" > ${ stops.length > 2 ? `<button class="danger" onclick="removeStop(${index})">Remove</button>` : "" } `; const colorPicker = div.querySelector(".color-picker"); const rgbInput = div.querySelector(".rgb-input"); const positionInput = div.querySelector(".position"); colorPicker.addEventListener("input", () => { stops[index].color = colorPicker.value; renderStops(); }); rgbInput.addEventListener("change", () => { const rgb = parseRgb(rgbInput.value); if (rgb) { stops[index].color = rgbToHex(rgb.r, rgb.g, rgb.b); update(); } else { renderStops(); } }); positionInput.addEventListener("input", () => { let position = Number(positionInput.value); position = Math.max(0, Math.min(100, position)); stops[index].position = position; update(); }); stopsContainer.appendChild(div); }); update(); } function parseRgb(value) { const parts = value .trim() .split(",") .map(x => x.trim()); if (parts.length !== 3) { return null; } const rgb = parts.map(Number); if (rgb.some(x => !Number.isInteger(x) || x < 0 || x > 255)) { return null; } return { r: rgb[0], g: rgb[1], b: rgb[2] }; } function update() { const sorted = [...stops].sort( (a, b) => a.position - b.position ); const gradient = sorted .map(stop => `${stop.color} ${stop.position}%`) .join(", "); preview.style.background = `linear-gradient(to right, ${gradient})`; const rgbText = sorted .map(stop => { const rgb = hexToRgb(stop.color); return `${rgb.r},${rgb.g},${rgb.b}`; }) .join(" "); output.value = rgbText; } function addStop() { if (stops.length >= 20) { return; } const sorted = [...stops].sort( (a, b) => a.position - b.position ); let newPosition = 50; if (sorted.length >= 2) { const first = sorted[0].position; const last = sorted[sorted.length - 1].position; newPosition = Math.round((first + last) / 2); // Find a gap between existing stops for (let i = 0; i < sorted.length - 1; i++) { const gap = sorted[i + 1].position - sorted[i].position; if (gap > 1) { newPosition = Math.round( (sorted[i].position + sorted[i + 1].position) / 2 ); break; } } } stops.push({ color: "#888888", position: newPosition }); renderStops(); } function removeStop(index) { stops.splice(index, 1); renderStops(); } function reverseGradient() { stops = stops.map(stop => ({ color: stop.color, position: 100 - stop.position })); renderStops(); } function resetGradient() { stops = [ { color: "#ffffff", position: 0 }, { color: "#000000", position: 100 } ]; renderStops(); } async function copyGradient() { // Make sure the output always has exactly: // r,g,b r,g,b // with no spaces inside RGB codes. update(); try { await navigator.clipboard.writeText(output.value); message.textContent = "Copied!"; setTimeout(() => { message.textContent = ""; }, 1500); } catch (error) { output.select(); document.execCommand("copy"); message.textContent = "Copied!"; setTimeout(() => { message.textContent = ""; }, 1500); } } output.addEventListener("change", () => { const colors = output.value.trim().split(/\s+/); const parsed = colors .map(parseRgb) .filter(rgb => rgb !== null); if (parsed.length < 2) { message.textContent = "Use format: 255,255,255 0,0,0"; update(); return; } stops = parsed.map((rgb, index) => ({ color: rgbToHex(rgb.r, rgb.g, rgb.b), position: index / (parsed.length - 1) * 100 })); renderStops(); }); renderStops(); </script> </body> </html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gradient Node Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Finger+Paint&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+:root{
+  --bg:#0b0d11;--panel:#151922;--panel2:#1d222d;--border:#303744;
+  --text:#f4f6f8;--muted:#9299a8;--accent:#fff;
+}
+body{
+  margin:0;min-height:100vh;background:var(--bg);color:var(--text);
+  font-family:"Finger Paint",cursive;
+}
+.app{width:min(1050px,calc(100% - 32px));margin:38px auto 60px}
+header{text-align:center;margin-bottom:28px}
+h1{font-size:32px;margin:0 0 7px;letter-spacing:-.7px}
+.subtitle{color:var(--muted);font-size:14px}
+.preview{
+  height:250px;border-radius:0;border:1px solid var(--border);
+  box-shadow:0 20px 55px rgba(0,0,0,.35);margin-bottom:24px;
+}
+.panel{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:0;padding:22px;
+}
+.section-title{font-weight:700;margin-bottom:16px}
+.timeline-wrap{padding:28px 12px 18px}
+.timeline{
+  height:54px;position:relative;cursor:crosshair;user-select:none;
+}
+.track{
+  position:absolute;left:0;right:0;top:17px;height:20px;border-radius:0;
+  border:1px solid rgba(255,255,255,.2);
+}
+.node{
+  position:absolute;top:7px;width:40px;height:40px;border-radius:0;
+  transform:translateX(-50%);border:3px solid #fff;
+  box-shadow:0 3px 12px rgba(0,0,0,.55);cursor:grab;z-index:3;
+}
+.node:active{cursor:grabbing}
+.node.selected{box-shadow:0 0 0 3px #111,0 0 0 5px #fff,0 4px 15px rgba(0,0,0,.6)}
+.tick-label{
+  position:absolute;top:48px;transform:translateX(-50%);
+  color:#707887;font-size:11px;pointer-events:none;
+}
+.hint{font-size:12px;color:var(--muted);margin-top:22px;text-align:center}
+.editor{
+  display:grid;grid-template-columns:1fr 280px;gap:18px;margin-top:10px
+}
+.color-area{
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:0;padding:18px;
+}
+.selected-title{font-size:13px;color:var(--muted);margin-bottom:12px}
+.color-row{display:flex;gap:14px;align-items:center}
+.color-picker{
+  width:72px;height:58px;padding:0;border:0;border-radius:0;
+  background:none;cursor:pointer;
+}
+.rgb{
+  flex:1;background:#0d1016;color:#fff;border:1px solid var(--border);
+  border-radius:0;padding:13px;font:14px ui-monospace,SFMono-Regular,Menlo,monospace;
+  outline:none;
+}
+.rgb:focus{border-color:#697283}
+.hex{font:12px ui-monospace,monospace;color:var(--muted);margin-top:9px}
+.brightness-control input[type="range"]{
+  appearance:none;-webkit-appearance:none;height:8px;
+  background:#303744;border:1px solid #4a5260;outline:none;cursor:pointer
+}
+.brightness-control input[type="range"]::-webkit-slider-thumb{
+  appearance:none;-webkit-appearance:none;width:18px;height:28px;
+  background:#fff;border:2px solid #111;cursor:pointer
+}
+.brightness-control input[type="range"]::-moz-range-thumb{
+  width:18px;height:28px;background:#fff;border:2px solid #111;cursor:pointer
+}
+
+.actions{display:flex;gap:9px;flex-wrap:wrap}
+button{
+  border:1px solid var(--border);background:#252b36;color:#fff;
+  border-radius:0;padding:11px 15px;font-weight:600;cursor:pointer;
+}
+button:hover{background:#303744}
+button.primary{background:#fff;color:#111;border-color:#fff}
+button.primary:hover{background:#ddd}
+button.danger{background:#381d21;border-color:#5b292f}
+button.danger:hover{background:#4a2329}
+.output{margin-top:18px}
+.output-label{display:block;color:var(--muted);font-size:12px;margin-bottom:8px}
+.output-row{display:flex;gap:9px}
+#output{
+  flex:1;min-width:0;background:#0d1016;color:#fff;border:1px solid var(--border);
+  border-radius:0;padding:13px;font:14px ui-monospace,SFMono-Regular,Menlo,monospace;
+  outline:none;
+}
+#output:focus{border-color:#697283}
+.message{height:18px;color:#8ff0a8;font-size:12px;margin-top:8px}
+.node-list{
+  background:var(--panel2);border:1px solid var(--border);
+  border-radius:0;padding:14px;max-height:230px;overflow:auto
+}
+.node-list-title{font-size:12px;color:var(--muted);margin-bottom:9px}
+.node-item{
+  display:flex;align-items:center;gap:9px;padding:8px;border-radius:0;cursor:pointer
+}
+.node-item:hover,.node-item.active{background:#292f3a}
+.swatch{width:25px;height:25px;border-radius:0;border:1px solid rgba(255,255,255,.25)}
+.node-info{font:12px ui-monospace,monospace}
+.node-pos{color:var(--muted);margin-left:auto}
+@media(max-width:750px){
+  .editor{grid-template-columns:1fr}
+  .preview{height:190px}
+}
+@media(max-width:520px){
+  .app{width:min(100% - 18px,1050px);margin-top:22px}
+  .panel{padding:14px}
+  .timeline-wrap{padding-left:5px;padding-right:5px}
+  .node{width:34px;height:34px}
+  .color-row{flex-wrap:wrap}
+  .color-picker{width:64px;height:52px}
+  .output-row{flex-direction:column}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Gradient Node Editor</h1>
+    <div class="subtitle">Build gradients by placing and editing color nodes on the timeline</div>
+  </header>
+
+  <div class="preview" id="preview"></div>
+
+  <div class="panel">
+    <div class="section-title">Gradient Timeline</div>
+
+    <div class="timeline-wrap">
+      <div class="timeline" id="timeline">
+        <div class="track" id="track"></div>
+      </div>
+      <div class="hint">Nodes automatically snap to evenly spaced positions • Drag a node past another to change its order • Double-click to add a node • Right-click a node to delete it</div>
+    </div>
+
+    <div class="editor">
+      <div class="color-area">
+        <div class="selected-title" id="selectedTitle">Selected node</div>
+
+        <div class="color-row">
+          <input class="color-picker" id="colorPicker" type="color" value="#ffffff">
+          <input class="rgb" id="rgbInput" value="255,255,255" spellcheck="false" autocomplete="off">
+        </div>
+
+        <div class="hex" id="hexValue">#ffffff</div>
+
+        <div class="brightness-control" style="margin-top:18px">
+          <label class="output-label" for="brightness">Brightness / Darkness</label>
+          <div style="display:flex;align-items:center;gap:12px">
+            <input id="brightness" type="range" min="0" max="100" value="100" style="flex:1">
+            <input id="brightnessValue" class="rgb" type="text" value="100%" style="width:82px;flex:none" spellcheck="false">
+          </div>
+        </div>
+
+        <div class="brightness-control" style="margin-top:18px">
+          <label class="output-label" for="pastel">Pastel / Lightness</label>
+          <div style="display:flex;align-items:center;gap:12px">
+            <input id="pastel" type="range" min="0" max="100" value="0" style="flex:1">
+            <input id="pastelValue" class="rgb" type="text" value="0%" style="width:82px;flex:none" spellcheck="false">
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:18px">
+          <button class="primary" id="addBtn">+ Add node</button>
+          <button id="reverseBtn">↔ Reverse</button>
+          <button id="resetBtn">Reset</button>
+          <button class="danger" id="deleteBtn">Delete selected</button>
+        </div>
+
+        <div class="output">
+          <label class="output-label" for="output">RGB output</label>
+          <div class="output-row">
+            <input id="output" readonly value="255,255,255 0,0,0">
+            <button class="primary" id="copyBtn">Copy</button>
+          </div>
+          <div class="message" id="message"></div>
+        </div>
+      </div>
+
+      <div class="node-list">
+        <div class="node-list-title">COLOR NODES</div>
+        <div id="nodeList"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const timeline = document.getElementById("timeline");
+const track = document.getElementById("track");
+const preview = document.getElementById("preview");
+const colorPicker = document.getElementById("colorPicker");
+const rgbInput = document.getElementById("rgbInput");
+const hexValue = document.getElementById("hexValue");
+const selectedTitle = document.getElementById("selectedTitle");
+const output = document.getElementById("output");
+const message = document.getElementById("message");
+const nodeList = document.getElementById("nodeList");
+
+let nodes = [
+  {id:1, order:0, pos:0, color:"#ffffff", baseColor:"#ffffff", brightness:100, pastel:0},
+  {id:2, order:1, pos:100, color:"#000000", baseColor:"#000000", brightness:100, pastel:0}
+];
+let selectedId = 1;
+let nextId = 3;
+let draggingId = null;
+
+function clamp(n,min,max){return Math.max(min,Math.min(max,n));}
+
+function hexToRgb(hex){
+  hex=hex.replace("#","");
+  if(hex.length===3) hex=hex.split("").map(x=>x+x).join("");
+  const n=parseInt(hex,16);
+  return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
+}
+
+function rgbToHex(r,g,b){
+  return "#"+[r,g,b].map(v=>Number(v).toString(16).padStart(2,"0")).join("");
+}
+
+function parseRGB(value){
+  const p=value.trim().split(",").map(x=>x.trim());
+  if(p.length!==3)return null;
+  const n=p.map(Number);
+  if(n.some(x=>!Number.isInteger(x)||x<0||x>255))return null;
+  return {r:n[0],g:n[1],b:n[2]};
+}
+
+function sortedNodes(){
+  return [...nodes].sort((a,b)=>a.order-b.order);
+}
+
+function normalizePositions(){
+  nodes.sort((a,b)=>a.order-b.order);
+  const count=nodes.length;
+  nodes.forEach((n,i)=>{
+    n.order=i;
+    n.pos=count===1?0:(i/(count-1))*100;
+  });
+}
+
+function gradientCSS(){
+  return sortedNodes().map(n=>`${n.color} ${n.pos}%`).join(", ");
+}
+
+function rgbOutput(){
+  return sortedNodes().map(n=>{
+    const c=hexToRgb(n.color);
+    return `${c.r},${c.g},${c.b}`;
+  }).join(" ");
+}
+
+
+function brightnessToColor(hex, percent){
+  const rgb=hexToRgb(hex);
+  const factor=percent/100;
+  return rgbToHex(
+    Math.round(rgb.r*factor),
+    Math.round(rgb.g*factor),
+    Math.round(rgb.b*factor)
+  );
+}
+
+function colorToBrightness(hex){
+  const rgb=hexToRgb(hex);
+  const max=Math.max(rgb.r,rgb.g,rgb.b);
+  return max===0?0:Math.round(max/255*100);
+}
+
+
+function applyColorAdjustments(n){
+  const base=hexToRgb(n.baseColor || n.color);
+  const brightness=(n.brightness ?? 100)/100;
+  const pastel=(n.pastel ?? 0)/100;
+
+  // Brightness scales the color. Pastel mixes the result toward white,
+  // making it lighter and less saturated without simply increasing brightness.
+  const r=base.r*brightness;
+  const g=base.g*brightness;
+  const b=base.b*brightness;
+
+  return rgbToHex(
+    Math.round(r+(255-r)*pastel),
+    Math.round(g+(255-g)*pastel),
+    Math.round(b+(255-b)*pastel)
+  );
+}
+
+function render(){
+  normalizePositions();
+  nodes.forEach(n=>{
+    n.color=applyColorAdjustments(n);
+  });
+  track.style.background=`linear-gradient(to right,${gradientCSS()})`;
+  preview.style.background=`linear-gradient(to right,${gradientCSS()})`;
+  output.value=rgbOutput();
+  lastValidOutput=output.value;
+
+  timeline.querySelectorAll(".node,.tick-label").forEach(e=>e.remove());
+
+  nodes.forEach(n=>{
+    const el=document.createElement("div");
+    el.className="node"+(n.id===selectedId?" selected":"");
+    el.style.left=n.pos+"%";
+    el.style.background=n.color;
+    el.title=`${n.pos}% — ${rgbOutputFor(n)}`;
+    el.dataset.id=n.id;
+
+    el.addEventListener("mousedown",e=>{
+      if(e.button!==0)return;
+      e.stopPropagation();
+      selectedId=n.id;
+      draggingId=n.id;
+      render();
+    });
+
+    el.addEventListener("contextmenu",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      if(nodes.length>2){
+        nodes=nodes.filter(x=>x.id!==n.id);
+        if(selectedId===n.id)selectedId=nodes[0].id;
+        render();
+      }else showMessage("At least 2 nodes are required.");
+    });
+
+    el.addEventListener("dblclick",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      if(nodes.length<50)addNodeAt(n.pos);
+    });
+
+    timeline.appendChild(el);
+  });
+
+  [0,25,50,75,100].forEach(p=>{
+    const t=document.createElement("div");
+    t.className="tick-label";
+    t.style.left=p+"%";
+    t.textContent=p+"%";
+    timeline.appendChild(t);
+  });
+
+  const selected=nodes.find(n=>n.id===selectedId)||nodes[0];
+  if(selected){
+    selectedId=selected.id;
+    const displayColor=selected.color;
+    const rgb=hexToRgb(displayColor);
+    colorPicker.value=displayColor;
+    rgbInput.value=`${rgb.r},${rgb.g},${rgb.b}`;
+    hexValue.textContent=displayColor;
+    selectedTitle.textContent=`Selected node • ${Math.round(selected.pos)}%`;
+
+    const brightness=selected.brightness ?? 100;
+    brightnessSlider.value=brightness;
+    brightnessValue.value=brightness+"%";
+    pastelSlider.value=selected.pastel ?? 0;
+    pastelValue.value=(selected.pastel ?? 0)+"%";
+  }
+
+  renderList();
+}
+
+function rgbOutputFor(node){
+  const c=hexToRgb(node.color);
+  return `${c.r},${c.g},${c.b}`;
+}
+
+function renderList(){
+  nodeList.innerHTML="";
+  sortedNodes().forEach(n=>{
+    const row=document.createElement("div");
+    row.className="node-item"+(n.id===selectedId?" active":"");
+    row.innerHTML=`
+      <span class="swatch" style="background:${n.color}"></span>
+      <span class="node-info">${rgbOutputFor(n)}</span>
+      <span class="node-pos">${n.pos}%</span>
+    `;
+    row.onclick=()=>{selectedId=n.id;render();};
+    nodeList.appendChild(row);
+  });
+}
+
+function addNodeAt(pos,color=null){
+  pos=clamp(pos,0,100);
+
+  const ordered=sortedNodes();
+  let insertIndex=ordered.findIndex(n=>n.pos>pos);
+  if(insertIndex===-1) insertIndex=ordered.length;
+
+  const before=ordered[insertIndex-1];
+  const after=ordered[insertIndex];
+
+  if(!color){
+    if(before&&after){
+      const a=hexToRgb(before.color),b=hexToRgb(after.color);
+      const span=after.pos-before.pos;
+      const t=span<=0?0.5:(pos-before.pos)/span;
+      color=rgbToHex(
+        Math.round(a.r+(b.r-a.r)*t),
+        Math.round(a.g+(b.g-a.g)*t),
+        Math.round(a.b+(b.b-a.b)*t)
+      );
+    }else{
+      color="#888888";
+    }
+  }
+
+  nodes.forEach(n=>{
+    if(n.order>=insertIndex)n.order++;
+  });
+
+  const node={id:nextId++,order:insertIndex,pos:0,color,baseColor:color,brightness:100,pastel:0};
+  nodes.push(node);
+  selectedId=node.id;
+  normalizePositions();
+  render();
+}
+
+function pointerPosition(e){
+  const r=timeline.getBoundingClientRect();
+  return clamp((e.clientX-r.left)/r.width*100,0,100);
+}
+
+timeline.addEventListener("click",e=>{
+  if(e.target.classList.contains("node"))return;
+  const p=pointerPosition(e);
+  const nearest=sortedNodes().reduce((best,n)=>
+    Math.abs(n.pos-p)<Math.abs(best.pos-p)?n:best
+  );
+  selectedId=nearest.id;
+  render();
+});
+
+timeline.addEventListener("dblclick",e=>{
+  if(e.target.classList.contains("node"))return;
+  addNodeAt(pointerPosition(e));
+});
+
+document.addEventListener("mousemove",e=>{
+  if(draggingId===null)return;
+
+  const n=nodes.find(x=>x.id===draggingId);
+  if(!n)return;
+
+  const pointer=pointerPosition(e);
+  const ordered=sortedNodes();
+  const oldIndex=ordered.findIndex(x=>x.id===n.id);
+  let newIndex=oldIndex;
+
+  for(let i=0;i<ordered.length;i++){
+    if(i===oldIndex)continue;
+
+    if(i<oldIndex && pointer < ordered[i].pos){
+      newIndex=i;
+      break;
+    }
+
+    if(i>oldIndex && pointer > ordered[i].pos){
+      newIndex=i;
+    }
+  }
+
+  if(newIndex!==oldIndex){
+    ordered.splice(oldIndex,1);
+    ordered.splice(newIndex,0,n);
+    ordered.forEach((node,i)=>node.order=i);
+    normalizePositions();
+    render();
+  }
+});
+
+document.addEventListener("mouseup",()=>{
+  draggingId=null;
+});
+
+colorPicker.addEventListener("input",()=>{
+  const n=nodes.find(x=>x.id===selectedId);
+  if(!n)return;
+  n.color=colorPicker.value.toLowerCase();
+  n.baseColor=n.color;
+  n.brightness=100;
+  n.pastel=0;
+  render();
+});
+
+rgbInput.addEventListener("change",()=>{
+  const rgb=parseRGB(rgbInput.value);
+  if(!rgb){
+    showMessage("Invalid RGB. Use 255,255,255");
+    render();
+    return;
+  }
+  const n=nodes.find(x=>x.id===selectedId);
+  if(!n)return;
+  n.color=rgbToHex(rgb.r,rgb.g,rgb.b);
+  n.baseColor=n.color;
+  n.brightness=100;
+  n.pastel=0;
+  render();
+});
+
+
+const brightnessSlider=document.getElementById("brightness");
+const brightnessValue=document.getElementById("brightnessValue");
+
+function setBrightness(value){
+  const n=nodes.find(x=>x.id===selectedId);
+  if(!n)return;
+
+  value=String(value).replace("%","").trim();
+  let percent=Number(value);
+
+  if(!Number.isFinite(percent)){
+    render();
+    return;
+  }
+
+  percent=clamp(Math.round(percent),0,100);
+
+  // Keep the original selected color as the 100% reference.
+  if(!n.baseColor){
+    n.baseColor=n.color;
+  }
+
+  n.brightness=percent;
+  n.color=brightnessToColor(n.baseColor,percent);
+
+  brightnessSlider.value=percent;
+  brightnessValue.value=percent+"%";
+  render();
+}
+
+brightnessSlider.addEventListener("input",()=>{
+  setBrightness(brightnessSlider.value);
+});
+
+brightnessValue.addEventListener("change",()=>{
+  setBrightness(brightnessValue.value);
+});
+
+
+const pastelSlider=document.getElementById("pastel");
+const pastelValue=document.getElementById("pastelValue");
+
+function setPastel(value){
+  const n=nodes.find(x=>x.id===selectedId);
+  if(!n)return;
+
+  value=String(value).replace("%","").trim();
+  let percent=Number(value);
+
+  if(!Number.isFinite(percent)){
+    render();
+    return;
+  }
+
+  percent=clamp(Math.round(percent),0,100);
+
+  if(!n.baseColor){
+    n.baseColor=n.color;
+  }
+
+  n.pastel=percent;
+  n.color=applyColorAdjustments(n);
+
+  pastelSlider.value=percent;
+  pastelValue.value=percent+"%";
+  render();
+}
+
+pastelSlider.addEventListener("input",()=>{
+  setPastel(pastelSlider.value);
+});
+
+pastelValue.addEventListener("change",()=>{
+  setPastel(pastelValue.value);
+});
+
+document.getElementById("addBtn").onclick=()=>{
+  const sorted=sortedNodes();
+  let bestPos=50;
+
+  for(let i=0;i<sorted.length-1;i++){
+    const gap=sorted[i+1].pos-sorted[i].pos;
+    if(gap>1){
+      bestPos=Math.round((sorted[i].pos+sorted[i+1].pos)/2);
+      break;
+    }
+  }
+  addNodeAt(bestPos);
+};
+
+document.getElementById("deleteBtn").onclick=()=>{
+  if(nodes.length<=2){
+    showMessage("At least 2 nodes are required.");
+    return;
+  }
+  nodes=nodes.filter(n=>n.id!==selectedId);
+  normalizePositions();
+  selectedId=sortedNodes()[0].id;
+  render();
+};
+
+document.getElementById("reverseBtn").onclick=()=>{
+  nodes.sort((a,b)=>a.order-b.order).reverse().forEach((n,i)=>n.order=i);
+  normalizePositions();
+  render();
+};
+
+document.getElementById("resetBtn").onclick=()=>{
+  nodes=[
+    {id:1,order:0,pos:0,color:"#ffffff",baseColor:"#ffffff",brightness:100,pastel:0},
+    {id:2,order:1,pos:100,color:"#000000",baseColor:"#000000",brightness:100,pastel:0}
+  ];
+  nextId=3;
+  selectedId=1;
+  render();
+};
+
+document.getElementById("copyBtn").onclick=async()=>{
+  try{
+    await navigator.clipboard.writeText(output.value);
+    showMessage("Copied to clipboard.");
+  }catch{
+    output.select();
+    document.execCommand("copy");
+    showMessage("Copied to clipboard.");
+  }
+};
+
+// Allow the RGB output to be edited directly.
+// Valid input replaces the current nodes.
+// Invalid input is immediately restored to the previous valid value.
+let lastValidOutput = output.value;
+
+output.readOnly = false;
+
+output.addEventListener("change",()=>{
+  const oldValue = lastValidOutput;
+  const text = output.value.trim();
+
+  if(!text){
+    output.value = oldValue;
+    showMessage("Invalid RGB value.");
+    return;
+  }
+
+  const parts = text.split(/\s+/);
+  const parsed = parts.map(parseRGB);
+
+  if(parsed.length < 2 || parsed.some(x=>x===null)){
+    output.value = oldValue;
+    showMessage("Invalid RGB value.");
+    return;
+  }
+
+  nodes = parsed.map((rgb,index)=> {
+    const color = rgbToHex(rgb.r,rgb.g,rgb.b);
+    return {
+      id: nextId++,
+      order: index,
+      pos: 0,
+      color: color,
+      baseColor: color,
+      brightness: 100
+    };
+  });
+
+  selectedId = nodes[0].id;
+  normalizePositions();
+  lastValidOutput = nodes.map(n=>rgbOutputFor(n)).join(" ");
+  output.value = lastValidOutput;
+  render();
+  showMessage("Gradient updated.");
+});
+
+output.addEventListener("keydown",e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    output.blur();
+  }
+});
+
+function showMessage(text){
+  message.textContent=text;
+  clearTimeout(showMessage.timer);
+  showMessage.timer=setTimeout(()=>message.textContent="",1600);
+}
+
+render();
+</script>
+</body>
+</html>
