@@ -1,29 +1,371 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jujutsuest — Home</title>
+
 <style>
-body {
-  background-color: #001521;
-}
+    * {
+        box-sizing: border-box;
+    }
 
-h1 {
-  color: white;
-  text-align: center;
-}
+    html {
+        scroll-behavior: smooth;
+    }
 
-p {
-  color: white;
-  font-family: verdana;
-  font-size: 20px;
-}
+    body {
+        margin: 0;
+        min-height: 100vh;
+        color: #eeeeee;
+        font-family: Arial, Helvetica, sans-serif;
+        background:
+            radial-gradient(circle at 20% 10%, #17384a 0, transparent 32%),
+            radial-gradient(circle at 85% 80%, #20204a 0, transparent 30%),
+            #090b10;
+    }
+
+    /* ---------- NAVIGATION ---------- */
+
+    nav {
+        width: 100%;
+        padding: 18px 7%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #252a34;
+        background: rgba(8, 10, 15, 0.78);
+        backdrop-filter: blur(12px);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .logo {
+        font-size: 21px;
+        font-weight: bold;
+        letter-spacing: -0.5px;
+    }
+
+    .nav-links {
+        display: flex;
+        gap: 22px;
+    }
+
+    .nav-links a {
+        color: #aaa;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .nav-links a:hover {
+        color: white;
+    }
+
+    /* ---------- HERO / HOME ---------- */
+
+    .hero {
+        width: min(1100px, 86vw);
+        min-height: 70vh;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        flex-direction: column;
+        padding: 80px 0;
+    }
+
+    .eyebrow {
+        color: #72c8e8;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        margin-bottom: 18px;
+    }
+
+    .hero h1 {
+        margin: 0;
+        font-size: clamp(48px, 9vw, 92px);
+        letter-spacing: -5px;
+        line-height: 0.95;
+    }
+
+    .hero p {
+        max-width: 600px;
+        color: #a9adb7;
+        font-size: 18px;
+        line-height: 1.6;
+        margin: 25px 0 32px;
+    }
+
+    .buttons {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .button {
+        padding: 13px 21px;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 14px;
+        border: 1px solid #3b4350;
+        color: white;
+        background: #171b22;
+    }
+
+    .button:hover {
+        background: #222832;
+        transform: translateY(-1px);
+    }
+
+    .button.primary {
+        background: #e9edf2;
+        color: #11151b;
+        border-color: #e9edf2;
+    }
+
+    /* ---------- HOME CARDS ---------- */
+
+    .section {
+        width: min(1100px, 86vw);
+        margin: 0 auto 80px;
+    }
+
+    .section-title {
+        margin-bottom: 18px;
+    }
+
+    .section-title h2 {
+        margin: 0 0 6px;
+        font-size: 25px;
+    }
+
+    .section-title p {
+        margin: 0;
+        color: #858b97;
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+    }
+
+    .card {
+        min-height: 190px;
+        padding: 24px;
+        border: 1px solid #292e38;
+        border-radius: 13px;
+        background: rgba(18, 21, 27, 0.88);
+        text-decoration: none;
+        color: white;
+        transition: 0.18s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-4px);
+        border-color: #596575;
+        background: #171b22;
+    }
+
+    .icon {
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        background: #202630;
+        margin-bottom: 22px;
+        font-size: 20px;
+    }
+
+    .card h3 {
+        margin: 0 0 9px;
+        font-size: 19px;
+    }
+
+    .card p {
+        margin: 0;
+        color: #9097a4;
+        line-height: 1.5;
+        font-size: 14px;
+    }
+
+    /* ---------- LITTLE INFO BAR ---------- */
+
+    .info {
+        padding: 22px 25px;
+        border: 1px solid #292e38;
+        border-radius: 13px;
+        background: rgba(18, 21, 27, 0.75);
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .info strong {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .info span {
+        color: #858b97;
+        font-size: 14px;
+    }
+
+    footer {
+        border-top: 1px solid #252a34;
+        padding: 28px 7%;
+        color: #666d79;
+        text-align: center;
+        font-size: 13px;
+    }
+
+    @media (max-width: 750px) {
+        nav {
+            padding: 16px 5%;
+        }
+
+        .nav-links {
+            gap: 12px;
+        }
+
+        .cards {
+            grid-template-columns: 1fr;
+        }
+
+        .hero {
+            min-height: 65vh;
+        }
+
+        .hero h1 {
+            letter-spacing: -3px;
+        }
+
+        .info {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
 </style>
 </head>
+
 <body>
 
-<h1>My First CSS Example</h1>
-<p>This is a paragraph.</p>
+<nav>
+    <div class="logo">Jujutsuest</div>
+
+    <div class="nav-links">
+        <a href="#home">Home</a>
+        <a href="#explore">Explore</a>
+        <a href="#about">About</a>
+    </div>
+</nav>
+
+<main id="home">
+
+    <section class="hero">
+        <div class="eyebrow">Welcome to my site</div>
+
+        <h1>Jujutsuest</h1>
+
+        <p>
+            A small corner of the internet for my projects, collections,
+            experiments, and whatever else I feel like putting here.
+        </p>
+
+        <div class="buttons">
+            <a class="button primary" href="#explore">Explore the site</a>
+            <a class="button" href="#about">About this place</a>
+        </div>
+    </section>
+
+    <section class="section" id="explore">
+        <div class="section-title">
+            <h2>Explore</h2>
+            <p>Some places you can go from the home page.</p>
+        </div>
+
+        <div class="cards">
+
+            <a class="card" href="#">
+                <div class="icon">✦</div>
+                <h3>My projects</h3>
+                <p>
+                    A collection of things I've made, worked on,
+                    or am currently messing around with.
+                </p>
+            </a>
+
+            <a class="card" href="#">
+                <div class="icon">♫</div>
+                <h3>Music</h3>
+                <p>
+                    A place for songs, sounds, playlists, or
+                    whatever music-related stuff I want to share.
+                </p>
+            </a>
+
+            <a class="card" href="#">
+                <div class="icon">☆</div>
+                <h3>Favorites</h3>
+                <p>
+                    Random things I like enough to give their own
+                    little section.
+                </p>
+            </a>
+
+            <a class="card" href="#">
+                <div class="icon">⌘</div>
+                <h3>Resources</h3>
+                <p>
+                    Useful links, references, tools, and other
+                    things worth keeping around.
+                </p>
+            </a>
+
+            <a class="card" href="#">
+                <div class="icon">☁</div>
+                <h3>Updates</h3>
+                <p>
+                    A simple place to put news and updates about
+                    what I'm working on.
+                </p>
+            </a>
+
+            <a class="card" href="#">
+                <div class="icon">?</div>
+                <h3>About me</h3>
+                <p>
+                    A little introduction and information about
+                    the person behind the site.
+                </p>
+            </a>
+
+        </div>
+    </section>
+
+    <section class="section" id="about">
+        <div class="info">
+            <div>
+                <strong>Thanks for visiting!</strong>
+                <span>This site is still a work in progress.</span>
+            </div>
+
+            <a class="button" href="#home">Back to top ↑</a>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    Made with HTML & CSS · Jujutsuest
+</footer>
 
 </body>
 </html>
-
-
